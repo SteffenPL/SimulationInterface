@@ -7,7 +7,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_settings("./scripts.ini", QSettings::IniFormat)
+    m_settings("./simulation_interface.ini", QSettings::IniFormat)
 {
     ui->setupUi(this);
 
@@ -50,6 +50,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_save_script, &QPushButton::clicked, this, &MainWindow::save_current_script);
 
     connect(ui->listWidget_params, &QListWidget::itemSelectionChanged, this, &MainWindow::update_variables_list);
+
+    connect(ui->pushButton_run, &QPushButton::clicked, this, &MainWindow::run_simulation);
 
 }
 
@@ -136,16 +138,39 @@ void MainWindow::run_simulation()
 {
     QSettings settings(QString("configs/config.ini"), QSettings::IniFormat);
 
-    this->ui->frame_params->setEnabled(false);
+    this->ui->tabWidget->setEnabled(false);
 
     // collect the list of parameters
 
+    QString script = "$julia test.jl";
+    auto command = script.split(" ", Qt::SkipEmptyParts);
+
+    for( auto it = command.begin(); it != command.end(); ++it)
+    {
+        if(m_variables.contains(*it))
+            *it = m_variables[*it];
+    }
+
+    auto proc = new QProcess(this);
+    proc->setProgram(command[0]);
+    proc->setArguments(QStringList() << command[1]);
+
+    //proc->setStandardOutputFile("out.txt");
+    //proc->setStandardErrorFile("error.txt");
+
+    proc->start();
     // run simulations
+    foreach(QListWidgetItem* param, this->ui->listWidget_params->selectedItems())
+    {
+        auto param_filename = param->text();
+
+
+    }
 }
 
 void MainWindow::stop_simulation()
 {
-    this->ui->frame_params->setEnabled(true);
+    this->ui->tabWidget->setEnabled(true);
 
     // stop simulations
 }
